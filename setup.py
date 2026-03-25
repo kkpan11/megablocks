@@ -1,4 +1,4 @@
-# Copyright 2024 MosaicML MegaBlocks authors
+# Copyright 2024 Databricks
 # SPDX-License-Identifier: Apache-2.0
 
 """MegaBlocks package setup."""
@@ -9,18 +9,13 @@ from typing import Any, Dict, Mapping
 
 from setuptools import find_packages, setup
 
-
 # We require torch in setup.py to build cpp extensions "ahead of time"
 # More info here: # https://pytorch.org/tutorials/advanced/cpp_extension.html
 try:
     import torch
-    from torch.utils.cpp_extension import (CUDA_HOME, BuildExtension,
-                                           CUDAExtension,)
+    from torch.utils.cpp_extension import CUDA_HOME, BuildExtension, CUDAExtension
 except ModuleNotFoundError as e:
-    raise ModuleNotFoundError(
-        "No module named 'torch'. `torch` is required to install `MegaBlocks`."
-    ) from e
-
+    raise ModuleNotFoundError("No module named 'torch'. `torch` is required to install `MegaBlocks`.",) from e
 
 _PACKAGE_NAME = 'megablocks'
 _PACKAGE_DIR = 'megablocks'
@@ -36,7 +31,6 @@ with open(version_path, encoding='utf-8') as f:
     content = f.read()
     exec(content, version_globals, version_locals)
     repo_version = version_locals['__version__']
-
 
 with open('README.md', 'r', encoding='utf-8') as fh:
     long_description = fh.read()
@@ -56,7 +50,6 @@ while True:
         long_description = long_description[:start] + \
             long_description[end + len(end_tag):]
 
-
 classifiers = [
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.9',
@@ -69,19 +62,18 @@ classifiers = [
 install_requires = [
     'numpy>=1.21.5,<2.1.0',
     'packaging>=21.3.0,<24.2',
-    'torch>=2.3.0,<2.4',
-    'triton>=2.1.0',
-    'stanford-stk @ git+https://git@github.com/stanford-futuredata/stk.git@a1ddf98466730b88a2988860a9d8000fd1833301',
+    'torch>=2.7.0,<2.7.1',
+    'stanford-stk==0.7.1',
 ]
 
 extra_deps = {}
 
-extra_deps["gg"] = [
-    'grouped_gemm @ git+https://git@github.com/tgale96/grouped_gemm.git@66c7195e35e8c4f22fa6a014037ef511bfa397cb',
+extra_deps['gg'] = [
+    'grouped_gemm==0.3.0',
 ]
 
 extra_deps['dev'] = [
-    'absl-py', # todo: delete when finish removing all absl tests
+    'absl-py',  # TODO: delete when finish removing all absl tests
     'coverage[toml]==7.4.4',
     'pytest_codeblocks>=0.16.1,<0.17',
     'pytest-cov>=4,<5',
@@ -90,14 +82,10 @@ extra_deps['dev'] = [
 ]
 
 extra_deps['testing'] = [
-    'mosaicml>=0.22.0',
+    'mosaicml>=0.24.1',
 ]
 
-extra_deps['all'] = list({
-    dep for key, deps in extra_deps.items() for dep in deps
-    if key not in {'testing'}
-})
-
+extra_deps['all'] = list({dep for key, deps in extra_deps.items() for dep in deps if key not in {'testing'}})
 
 cmdclass = {}
 ext_modules = []
@@ -116,9 +104,7 @@ if 'cu' in torch.__version__ and CUDA_HOME is not None:
         device_capability = f'{device_capability_tuple[0]}{device_capability_tuple[1]}'
 
     if device_capability:
-        nvcc_flags.append(
-            f'--generate-code=arch=compute_{device_capability},code=sm_{device_capability}'
-        )
+        nvcc_flags.append(f'--generate-code=arch=compute_{device_capability},code=sm_{device_capability}',)
 
     ext_modules = [
         CUDAExtension(
@@ -127,18 +113,18 @@ if 'cu' in torch.__version__ and CUDA_HOME is not None:
             include_dirs=['csrc'],
             extra_compile_args={
                 'cxx': ['-fopenmp'],
-                'nvcc': nvcc_flags
+                'nvcc': nvcc_flags,
             },
-        )
+        ),
     ]
 elif CUDA_HOME is None:
     warnings.warn(
         'Attempted to install CUDA extensions, but CUDA_HOME was None. ' +
         'Please install CUDA and ensure that the CUDA_HOME environment ' +
-        'variable points to the installation location.')
+        'variable points to the installation location.',
+    )
 else:
     warnings.warn('Warning: No CUDA devices; cuda code will not be compiled.')
-
 
 setup(
     name=_PACKAGE_NAME,
@@ -156,4 +142,5 @@ setup(
     install_requires=install_requires,
     extras_require=extra_deps,
     python_requires='>=3.9',
+    package_data={_PACKAGE_NAME: ['py.typed']},
 )
